@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}Home - AbbayTV{% endblock %}
+
+{% block content %}
+<!-- Hero Section with Background Banner -->
+<div class="hero">
+    <img src="{{ url_for('static', filename='images/banner.png') }}" 
+         alt="AbbayTV Background" 
+         class="hero-banner"
+         onerror="this.style.display='none'">
+    <div class="hero-content">
+        <h1>Welcome to AbbayTV</h1>
+        <p>Your premier source for Ethiopian news, entertainment, and cultural programs</p>
+    </div>
+</div>
+
+<div class="container">
+    <!-- Latest News Section -->
+    <section style="margin-bottom: 4rem;">
+        <div class="section-header">
+            <h2>Latest News</h2>
+            <a href="{{ url_for('news') }}" class="btn btn-secondary">View All News →</a>
+        </div>
+        
+        <div class="thumbnail-grid">
+            {% for item in news %}
+            <div class="thumbnail-card">
+                <a href="{{ url_for('news_detail', id=item.id) }}" style="text-decoration: none;">
+                    <div class="thumbnail-image">
+                        <!-- FIXED: Added proper img tag with youtube-thumb class and data attribute -->
+                        <img class="youtube-thumb" data-youtube-url="{{ item.youtube_url }}" src="" alt="{{ item.title }}">
+                        <div class="thumbnail-overlay">
+                            <span class="play-button">▶</span>
+                        </div>
+                        {% if item.category %}
+                        <span class="category-tag">{{ item.category.icon }} {{ item.category.name }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="thumbnail-content">
+                        <h3 class="thumbnail-title">{{ item.title }}</h3>
+                        <div class="thumbnail-meta">
+                            <span>{{ item.created_at.strftime('%B %d, %Y') }}</span>
+                            <span>👁️ {{ item.views }}</span>
+                            <span>❤️ {{ item.like_count }}</span>
+                            <span>💬 {{ item.comment_count }}</span>
+                        </div>
+                        <p class="thumbnail-description">{{ item.description[:120] }}...</p>
+                        {% if item.tags %}
+                        <div class="thumbnail-tags">
+                            {% for tag in item.tags.split(',')[:3] %}
+                            <span class="tag">#{{ tag.strip() }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </a>
+            </div>
+            {% else %}
+            <p class="no-items">No news available.</p>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- Latest Programs Section -->
+    <section style="margin-bottom: 4rem;">
+        <div class="section-header">
+            <h2>Popular Programs</h2>
+            <a href="{{ url_for('programs') }}" class="btn btn-secondary">View All Programs →</a>
+        </div>
+        
+        <div class="thumbnail-grid">
+            {% for program in programs %}
+            <div class="thumbnail-card">
+                <a href="{{ url_for('program_detail', id=program.id) }}" style="text-decoration: none;">
+                    <div class="thumbnail-image">
+                        <!-- FIXED: Added proper img tag with youtube-thumb class and data attribute -->
+                        <img class="youtube-thumb" data-youtube-url="{{ program.youtube_url }}" src="" alt="{{ program.title }}">
+                        <div class="thumbnail-overlay">
+                            <span class="play-button">▶</span>
+                        </div>
+                        {% if program.category %}
+                        <span class="category-tag">{{ program.category.icon }} {{ program.category.name }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="thumbnail-content">
+                        <h3 class="thumbnail-title">{{ program.title }}</h3>
+                        <div class="thumbnail-meta">
+                            <span>{{ program.created_at.strftime('%B %d, %Y') }}</span>
+                            <span>👁️ {{ program.views }}</span>
+                            <span>❤️ {{ program.like_count }}</span>
+                            <span>💬 {{ program.comment_count }}</span>
+                        </div>
+                        <p class="thumbnail-description">{{ program.description[:120] }}...</p>
+                        {% if program.tags %}
+                        <div class="thumbnail-tags">
+                            {% for tag in program.tags.split(',')[:3] %}
+                            <span class="tag">#{{ tag.strip() }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </a>
+            </div>
+            {% else %}
+            <p class="no-items">No programs available.</p>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- Call to Action -->
+    <div class="cta-section" style="text-align: center; padding: 4rem 2rem; background: linear-gradient(135deg, #0A0A0A 0%, #1A1A1A 100%); border-radius: 12px; margin: 3rem 0; border: 1px solid rgba(255, 215, 0, 0.2);">
+        <h2 style="color: #FFD700; font-size: 2.5rem; margin-bottom: 1rem;">Join Our Community</h2>
+        <p style="color: #CCCCCC; font-size: 1.2rem; margin-bottom: 2rem;">Get access to exclusive content and updates</p>
+        {% if not current_user.is_authenticated %}
+        <a href="{{ url_for('signup') }}" class="btn btn-primary" style="padding: 1rem 3rem; font-size: 1.2rem;">Sign Up Now</a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

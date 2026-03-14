@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AbbayTV - {% block title %}Ethiopian Media{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/logo.png') }}">
+    <style>
+        /* Emergency fix for button visibility */
+        .nav-right .btn {
+            display: inline-flex !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            pointer-events: auto !important;
+            z-index: 1000 !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar with Hamburger Menu -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <!-- Logo on the left -->
+            <a href="{{ url_for('index') }}" class="logo">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="AbbayTV Logo" onerror="this.src='https://via.placeholder.com/150x50?text=AbbayTV'">
+            </a>
+            
+            <!-- Hamburger Menu Button -->
+            <button class="hamburger" id="hamburger-btn">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            
+            <!-- Navigation Links -->
+            <div class="nav-links" id="navLinks">
+                <a href="{{ url_for('index') }}">Home</a>
+                <a href="{{ url_for('news') }}">News</a>
+                <a href="{{ url_for('programs') }}">Programs</a>
+                <a href="{{ url_for('live') }}" class="live-nav-link">🔴 Live</a>
+                <a href="{{ url_for('jobs') }}">Jobs</a>
+                
+                <!-- User Actions - ONLY HERE -->
+                <div class="nav-right">
+                    {% if current_user.is_authenticated %}
+                        {% if current_user.is_admin %}
+                            <span class="admin-badge">👑 Admin</span>
+                            <a href="{{ url_for('admin') }}" class="btn btn-secondary">Dashboard</a>
+                        {% endif %}
+                        <a href="{{ url_for('profile') }}" class="btn btn-secondary">Profile</a>
+                        <a href="{{ url_for('logout') }}" class="btn btn-primary">Logout</a>
+                    {% else %}
+                        <a href="{{ url_for('login') }}" class="btn btn-secondary">Login</a>
+                        <a href="{{ url_for('signup') }}" class="btn btn-primary">Sign Up</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash Messages Section -->
+    <div class="flash-messages">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        <span>{{ message }}</span>
+                        <button class="close-alert" onclick="this.parentElement.remove()">&times;</button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Main Content Area -->
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>AbbayTV</h4>
+                    <p>Your premier source for Ethiopian news, entertainment, and cultural programs.</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="{{ url_for('index') }}">Home</a></li>
+                        <li><a href="{{ url_for('news') }}">News</a></li>
+                        <li><a href="{{ url_for('programs') }}">Programs</a></li>
+                        <li><a href="{{ url_for('live') }}">Live</a></li>
+                        <li><a href="{{ url_for('jobs') }}">Jobs</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Connect With Us</h4>
+                    <div class="social-links">
+                        <a href="#" class="social-link">📱</a>
+                        <a href="#" class="social-link">💬</a>
+                        <a href="#" class="social-link">📧</a>
+                        <a href="#" class="social-link">📺</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 AbbayTV. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    
+    <!-- Page-specific JavaScript -->
+    {% block scripts %}{% endblock %}
+</body>
+</html>

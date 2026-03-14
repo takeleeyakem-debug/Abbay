@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}Jobs - AbbayTV{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 style="color: #FFD700; margin-bottom: 2rem;">Career Opportunities</h1>
+    
+    <!-- Search and Filter Bar -->
+    <div class="filter-bar">
+        <form method="GET" action="{{ url_for('jobs') }}" class="filter-form">
+            <div class="filter-group">
+                <input type="text" name="search" class="filter-input" placeholder="Search jobs..." value="{{ current_search }}">
+                
+                <select name="type" class="filter-select">
+                    <option value="all" {% if current_type == 'all' %}selected{% endif %}>All Types</option>
+                    {% for type in job_types %}
+                    <option value="{{ type }}" {% if current_type == type %}selected{% endif %}>{{ type }}</option>
+                    {% endfor %}
+                </select>
+                
+                <button type="submit" class="btn btn-primary">Apply Filters</button>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Results Count -->
+    <div class="results-count">
+        Showing {{ jobs|length }} of {{ pagination.total }} results
+    </div>
+    
+    <!-- Jobs Grid -->
+    <div class="card-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem;">
+        {% for job in jobs %}
+        <div class="thumbnail-card" style="display: flex; flex-direction: column;">
+            <div class="thumbnail-content" style="flex: 1;">
+                <h3 class="thumbnail-title">{{ job.title }}</h3>
+                <div style="display: flex; gap: 1rem; margin: 0.5rem 0; color: #B8860B;">
+                    <span>🏢 {{ job.company }}</span>
+                    <span>📍 {{ job.location }}</span>
+                </div>
+                <div style="margin: 0.5rem 0;">
+                    <span class="job-type-badge">{{ job.job_type }}</span>
+                    <span class="job-type-badge" style="margin-left: 0.5rem;">💰 {{ job.salary }}</span>
+                </div>
+                <p class="thumbnail-description">{{ job.description[:150] }}...</p>
+                <div style="margin-top: 1rem;">
+                    <a href="{{ url_for('job_detail', id=job.id) }}" class="btn btn-primary">View Details</a>
+                </div>
+                <div style="margin-top: 0.5rem; color: #666; font-size: 0.8rem;">
+                    Posted {{ job.created_at.strftime('%b %d, %Y') }}
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <p class="no-items">No jobs found matching your criteria.</p>
+        {% endfor %}
+    </div>
+    
+    <!-- Pagination -->
+    {% if pagination.pages > 1 %}
+    <div class="pagination">
+        {% if pagination.has_prev %}
+        <a href="{{ url_for('jobs', page=pagination.prev_num, type=current_type, search=current_search) }}" class="btn btn-secondary">← Previous</a>
+        {% endif %}
+        
+        <span class="page-info">Page {{ pagination.page }} of {{ pagination.pages }}</span>
+        
+        {% if pagination.has_next %}
+        <a href="{{ url_for('jobs', page=pagination.next_num, type=current_type, search=current_search) }}" class="btn btn-secondary">Next →</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

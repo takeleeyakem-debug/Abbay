@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block title %}Live - AbbayTV{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Live Header -->
+    <div class="live-header">
+        <h1 class="live-title">
+            {% if live.is_live %}
+            <span class="live-indicator">
+                <span class="pulse-dot"></span> LIVE NOW
+            </span>
+            {% else %}
+            <span class="offline-indicator">
+                <span class="offline-dot"></span> OFFLINE
+            </span>
+            {% endif %}
+            {{ live.live_title }}
+        </h1>
+    </div>
+
+    <!-- Live Video Section -->
+    <div class="live-video-container">
+        {% if live.is_live and live.live_url %}
+            {% if 'youtube' in live.live_url %}
+            <iframe class="live-iframe" 
+                    src="{{ get_youtube_embed(live.live_url) }}?autoplay=1" 
+                    frameborder="0" 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                    allowfullscreen>
+            </iframe>
+            {% else %}
+            <video class="live-iframe" controls autoplay>
+                <source src="{{ live.live_url }}" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+            {% endif %}
+        {% else %}
+        <div class="offline-placeholder">
+            <div class="offline-content">
+                <span class="offline-icon">📺</span>
+                <h2>No Live Stream Currently</h2>
+                <p>Check back later for live broadcasts from AbbayTV</p>
+                <div class="upcoming-schedule" style="margin-top: 2rem; padding: 1.5rem; background: rgba(255, 215, 0, 0.1); border-radius: 8px;">
+                    <h3 style="color: #FFD700; margin-bottom: 1rem;">Upcoming Live Shows</h3>
+                    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                        <div style="display: flex; justify-content: space-between; padding: 0.5rem; border-bottom: 1px solid rgba(255, 215, 0, 0.2);">
+                            <span style="color: #FFD700;">Monday 8:00 PM</span>
+                            <span style="color: #FFF;">Morning Show with Abebe</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 0.5rem; border-bottom: 1px solid rgba(255, 215, 0, 0.2);">
+                            <span style="color: #FFD700;">Wednesday 7:00 PM</span>
+                            <span style="color: #FFF;">Tech Talk Ethiopia</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 0.5rem; border-bottom: 1px solid rgba(255, 215, 0, 0.2);">
+                            <span style="color: #FFD700;">Friday 9:00 PM</span>
+                            <span style="color: #FFF;">Music Hour</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Live Info Section -->
+    {% if live.is_live %}
+    <div class="live-info">
+        <div class="live-info-header">
+            <h2>{{ live.live_title }}</h2>
+            <div class="live-stats">
+                <span class="viewer-count">👁️ 1,234 watching</span>
+                <span class="live-time">🔴 LIVE</span>
+            </div>
+        </div>
+        <p class="live-description">{{ live.live_description }}</p>
+        
+        <!-- Live Chat Section -->
+        {% if live.chat_enabled %}
+        <div class="live-chat">
+            <h3>Live Chat</h3>
+            <div class="chat-messages" id="chat-messages">
+                <div class="chat-message">
+                    <span class="chat-user">System:</span>
+                    <span class="chat-text">Welcome to the live chat!</span>
+                </div>
+            </div>
+            <div class="chat-input">
+                <input type="text" placeholder="Type a message..." id="chat-input">
+                <button onclick="sendMessage()" class="btn btn-primary">Send</button>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Related Content -->
+    <div class="related-live" style="margin-top: 3rem;">
+        <h3 style="color: #FFD700; margin-bottom: 1.5rem;">Watch More</h3>
+        <div class="thumbnail-grid">
+            {% for item in news %}
+            <div class="thumbnail-card">
+                <a href="{{ url_for('news_detail', id=item.id) }}">
+                    <div class="thumbnail-image">
+                        <img src="{{ get_youtube_thumbnail(item.youtube_url) }}" alt="{{ item.title }}">
+                        <div class="thumbnail-overlay">
+                            <span class="play-button">▶</span>
+                        </div>
+                    </div>
+                    <div class="thumbnail-content">
+                        <h4 class="thumbnail-title">{{ item.title[:50] }}</h4>
+                        <p class="thumbnail-meta">{{ item.created_at.strftime('%b %d, %Y') }}</p>
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<script>
+function sendMessage() {
+    const input = document.getElementById('chat-input');
+    const message = input.value.trim();
+    const chatMessages = document.getElementById('chat-messages');
+    
+    if (message) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'chat-message';
+        messageDiv.innerHTML = `
+            <span class="chat-user">You:</span>
+            <span class="chat-text">${escapeHtml(message)}</span>
+        `;
+        chatMessages.appendChild(messageDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        input.value = '';
+    }
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+</script>
+{% endblock %}

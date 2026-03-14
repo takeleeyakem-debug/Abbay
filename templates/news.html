@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}News - AbbayTV{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 style="color: #FFD700; margin-bottom: 2rem;">Latest News</h1>
+    
+    <!-- Search and Filter Bar -->
+    <div class="filter-bar">
+        <form method="GET" action="{{ url_for('news') }}" class="filter-form">
+            <div class="filter-group">
+                <input type="text" name="search" class="filter-input" placeholder="Search news..." value="{{ current_search }}">
+                
+                <select name="category" class="filter-select">
+                    <option value="all" {% if current_category == 'all' %}selected{% endif %}>All Categories</option>
+                    {% for category in categories %}
+                    <option value="{{ category.slug }}" {% if current_category == category.slug %}selected{% endif %}>
+                        {{ category.icon }} {{ category.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+                
+                <select name="sort" class="filter-select">
+                    <option value="newest" {% if current_sort == 'newest' %}selected{% endif %}>Newest First</option>
+                    <option value="popular" {% if current_sort == 'popular' %}selected{% endif %}>Most Viewed</option>
+                    <option value="liked" {% if current_sort == 'liked' %}selected{% endif %}>Most Liked</option>
+                </select>
+                
+                <button type="submit" class="btn btn-primary">Apply Filters</button>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Results Count -->
+    <div class="results-count">
+        Showing {{ news|length }} of {{ pagination.total }} results
+    </div>
+    
+    <!-- News Grid -->
+    <div class="thumbnail-grid">
+        {% for item in news %}
+        <div class="thumbnail-card">
+            <a href="{{ url_for('news_detail', id=item.id) }}">
+                <div class="thumbnail-image">
+                    <!-- FIXED: Added proper img tag with youtube-thumb class and data attribute -->
+                    <img class="youtube-thumb" data-youtube-url="{{ item.youtube_url }}" src="" alt="{{ item.title }}">
+                    <div class="thumbnail-overlay">
+                        <span class="play-button">▶</span>
+                    </div>
+                    {% if item.category %}
+                    <span class="category-tag">{{ item.category.icon }} {{ item.category.name }}</span>
+                    {% endif %}
+                </div>
+                <div class="thumbnail-content">
+                    <h3 class="thumbnail-title">{{ item.title }}</h3>
+                    <div class="thumbnail-meta">
+                        <span>{{ item.created_at.strftime('%B %d, %Y') }}</span>
+                        <span>👁️ {{ item.views }}</span>
+                        <span>❤️ {{ item.like_count }}</span>
+                        <span>💬 {{ item.comment_count }}</span>
+                    </div>
+                    <p class="thumbnail-description">{{ item.description[:150] }}...</p>
+                    {% if item.tags %}
+                    <div class="thumbnail-tags">
+                        {% for tag in item.tags.split(',')[:3] %}
+                        <span class="tag">#{{ tag.strip() }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </a>
+        </div>
+        {% else %}
+        <p class="no-items">No news found matching your criteria.</p>
+        {% endfor %}
+    </div>
+    
+    <!-- Pagination -->
+    {% if pagination.pages > 1 %}
+    <div class="pagination">
+        {% if pagination.has_prev %}
+        <a href="{{ url_for('news', page=pagination.prev_num, category=current_category, search=current_search, sort=current_sort) }}" class="btn btn-secondary">← Previous</a>
+        {% endif %}
+        
+        <span class="page-info">Page {{ pagination.page }} of {{ pagination.pages }}</span>
+        
+        {% if pagination.has_next %}
+        <a href="{{ url_for('news', page=pagination.next_num, category=current_category, search=current_search, sort=current_sort) }}" class="btn btn-secondary">Next →</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

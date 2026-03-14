@@ -1,0 +1,351 @@
+{% extends "base.html" %}
+
+{% block title %}{{ program.title }} - AbbayTV{% endblock %}
+
+{% block content %}
+<div class="container">
+    <a href="{{ url_for('programs') }}" class="btn btn-secondary" style="margin-bottom: 1rem;">← Back to Programs</a>
+    
+    <div class="program-container" style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem;">
+        <!-- Main Content -->
+        <div class="program-main">
+            <article style="background: linear-gradient(145deg, #1A1A1A 0%, #0D0D0D 100%); padding: 2rem; border-radius: 8px; border: 1px solid rgba(255, 215, 0, 0.2);">
+                <h1 style="color: #FFD700; margin-bottom: 0.5rem;">{{ program.title }}</h1>
+                
+                <!-- Post Meta (Instagram Style) -->
+                <div class="post-meta" style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(255, 215, 0, 0.2);">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #FFD700 0%, #B8860B 100%); display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+                            {{ program.author.username[0]|upper }}
+                        </div>
+                        <div>
+                            <div style="font-weight: bold; color: #FFD700;">{{ program.author.username }}</div>
+                            <div style="font-size: 0.8rem; color: #666;">{{ time_ago(program.created_at) }} ago</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Interaction Stats -->
+                    <div style="display: flex; gap: 1rem; margin-left: auto;">
+                        <span style="color: #B8860B;">👁️ {{ program.views }}</span>
+                        <span style="color: #FFD700;" id="like-count-{{ program.id }}">❤️ {{ program.like_count }}</span>
+                        <span style="color: #FFD700;" id="comment-count-{{ program.id }}">💬 {{ program.comment_count }}</span>
+                    </div>
+                </div>
+                
+                <!-- YouTube Video -->
+                <div class="video-container" style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; margin: 1.5rem 0; border-radius: 8px; border: 2px solid rgba(255, 215, 0, 0.2);">
+                    <iframe src="{{ get_youtube_embed(program.youtube_url) }}" 
+                            style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"
+                            frameborder="0" 
+                            allowfullscreen>
+                    </iframe>
+                </div>
+                
+                <!-- Tags -->
+                {% if program.tags %}
+                <div style="margin: 1rem 0;">
+                    {% for tag in program.tags.split(',') %}
+                    <span class="tag" style="display: inline-block; margin-right: 0.5rem;">#{{ tag.strip() }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <!-- Description -->
+                <div style="line-height: 1.8; color: #CCCCCC;">
+                    <p>{{ program.description }}</p>
+                </div>
+                
+                <!-- Action Buttons (Instagram Style) -->
+                <div style="display: flex; gap: 1rem; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid rgba(255, 215, 0, 0.2);">
+                    {% if current_user.is_authenticated %}
+                    <button class="like-btn btn {% if program.is_liked_by(current_user) %}btn-primary{% else %}btn-secondary{% endif %}" 
+                            data-type="program" 
+                            data-id="{{ program.id }}"
+                            style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span>❤️</span>
+                        <span class="like-text">{% if program.is_liked_by(current_user) %}Liked{% else %}Like{% endif %}</span>
+                        <span class="like-count">({{ program.like_count }})</span>
+                    </button>
+                    {% else %}
+                    <a href="{{ url_for('login') }}" class="btn btn-secondary" style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span>❤️</span>
+                        <span>Like ({{ program.like_count }})</span>
+                    </a>
+                    {% endif %}
+                    
+                    <button class="btn btn-secondary" onclick="document.getElementById('comment-input').focus()" style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span>💬</span>
+                        <span>Comment</span>
+                    </button>
+                </div>
+            </article>
+        </div>
+        
+        <!-- Comments Section (Instagram Style) -->
+        <div class="comments-sidebar" style="background: linear-gradient(145deg, #1A1A1A 0%, #0D0D0D 100%); padding: 1.5rem; border-radius: 8px; border: 1px solid rgba(255, 215, 0, 0.2); height: fit-content; position: sticky; top: 100px;">
+            <h3 style="color: #FFD700; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                <span>💬 Comments</span>
+                <span style="background: rgba(255, 215, 0, 0.1); padding: 0.2rem 0.8rem; border-radius: 20px; font-size: 0.9rem;">{{ program.comment_count }}</span>
+            </h3>
+            
+            <!-- Comment Input -->
+            {% if current_user.is_authenticated %}
+            <div class="comment-input-section" style="margin-bottom: 2rem;">
+                <div style="display: flex; gap: 1rem; align-items: flex-start;">
+                    <div style="width: 35px; height: 35px; border-radius: 50%; background: linear-gradient(135deg, #FFD700 0%, #B8860B 100%); display: flex; align-items: center; justify-content: center; font-size: 1rem;">
+                        {{ current_user.username[0]|upper }}
+                    </div>
+                    <div style="flex: 1;">
+                        <textarea id="comment-input" class="form-input" placeholder="Add a comment..." rows="2" style="width: 100%; margin-bottom: 0.5rem;"></textarea>
+                        <button class="btn btn-primary" onclick="postComment({{ program.id }})" style="float: right;">Post</button>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div style="text-align: center; padding: 2rem; background: rgba(0,0,0,0.3); border-radius: 8px; margin-bottom: 2rem;">
+                <p style="color: #666; margin-bottom: 1rem;">Login to join the conversation</p>
+                <a href="{{ url_for('login') }}" class="btn btn-primary">Login</a>
+            </div>
+            {% endif %}
+            
+            <!-- Comments List -->
+            <div class="comments-list" id="comments-list" style="max-height: 500px; overflow-y: auto;">
+                {% for comment in comments %}
+                <div class="comment-item" id="comment-{{ comment.id }}" style="margin-bottom: 1.5rem;">
+                    <!-- Main Comment -->
+                    <div style="display: flex; gap: 1rem;">
+                        <div style="width: 35px; height: 35px; border-radius: 50%; background: linear-gradient(135deg, #FFD700 0%, #B8860B 100%); display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0;">
+                            {{ comment.author.username[0]|upper }}
+                        </div>
+                        <div style="flex: 1;">
+                            <div style="background: rgba(255, 215, 0, 0.05); padding: 0.8rem; border-radius: 8px;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.3rem;">
+                                    <span style="font-weight: bold; color: #FFD700;">{{ comment.author.username }}</span>
+                                    <span style="font-size: 0.7rem; color: #666;">{{ comment.time_ago }}</span>
+                                </div>
+                                <p style="color: #FFF; margin: 0;">{{ comment.content }}</p>
+                            </div>
+                            
+                            <!-- Reply Button -->
+                            <button class="reply-btn" style="background: none; border: none; color: #B8860B; font-size: 0.8rem; margin-top: 0.3rem; margin-left: 0.5rem; cursor: pointer;" onclick="showReplyInput({{ comment.id }})">
+                                Reply
+                            </button>
+                            
+                            <!-- Reply Input (Hidden) -->
+                            <div id="reply-input-{{ comment.id }}" style="display: none; margin-top: 0.5rem;">
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <input type="text" id="reply-content-{{ comment.id }}" class="form-input" placeholder="Write a reply..." style="flex: 1;">
+                                    <button class="btn btn-primary btn-small" onclick="postReply({{ program.id }}, {{ comment.id }})">Post</button>
+                                </div>
+                            </div>
+                            
+                            <!-- Replies -->
+                            {% if comment.replies.count() > 0 %}
+                            <div style="margin-left: 2rem; margin-top: 0.8rem;">
+                                {% for reply in comment.replies %}
+                                <div style="display: flex; gap: 1rem; margin-bottom: 0.8rem;">
+                                    <div style="width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, #FFD700 0%, #B8860B 100%); display: flex; align-items: center; justify-content: center; font-size: 0.8rem; flex-shrink: 0;">
+                                        {{ reply.author.username[0]|upper }}
+                                    </div>
+                                    <div style="flex: 1;">
+                                        <div style="background: rgba(255, 215, 0, 0.02); padding: 0.5rem; border-radius: 6px;">
+                                            <div style="display: flex; justify-content: space-between;">
+                                                <span style="font-weight: bold; color: #FFD700; font-size: 0.9rem;">{{ reply.author.username }}</span>
+                                                <span style="font-size: 0.7rem; color: #666;">{{ reply.time_ago }}</span>
+                                            </div>
+                                            <p style="color: #CCC; font-size: 0.9rem; margin: 0.2rem 0 0 0;">{{ reply.content }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div style="text-align: center; padding: 3rem; color: #666;">
+                    <p>No comments yet. Be the first to comment!</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Related Programs -->
+    {% if related_programs %}
+    <div style="margin-top: 3rem;">
+        <h3 style="color: #FFD700; margin-bottom: 1.5rem;">More Programs</h3>
+        <div class="thumbnail-grid">
+            {% for item in related_programs %}
+            <div class="thumbnail-card">
+                <a href="{{ url_for('program_detail', id=item.id) }}">
+                    <div class="thumbnail-image">
+                        <img src="{{ get_youtube_thumbnail(item.youtube_url) }}" alt="{{ item.title }}">
+                        <div class="thumbnail-overlay">
+                            <span class="play-button">▶</span>
+                        </div>
+                    </div>
+                    <div class="thumbnail-content">
+                        <h4 class="thumbnail-title">{{ item.title[:50] }}...</h4>
+                        <div class="thumbnail-meta">
+                            <span>{{ time_ago(item.created_at) }} ago</span>
+                            <span>❤️ {{ item.like_count }}</span>
+                            <span>💬 {{ item.comment_count }}</span>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+// Like functionality
+document.querySelectorAll('.like-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const type = this.dataset.type;
+        const id = this.dataset.id;
+        
+        fetch(`/api/${type}/${id}/like`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.liked) {
+                this.classList.remove('btn-secondary');
+                this.classList.add('btn-primary');
+                this.querySelector('.like-text').textContent = 'Liked';
+            } else {
+                this.classList.remove('btn-primary');
+                this.classList.add('btn-secondary');
+                this.querySelector('.like-text').textContent = 'Like';
+            }
+            this.querySelector('.like-count').textContent = `(${data.count})`;
+            document.getElementById(`like-count-${id}`).textContent = `❤️ ${data.count}`;
+        });
+    });
+});
+
+// Post comment
+function postComment(programId) {
+    const input = document.getElementById('comment-input');
+    const content = input.value.trim();
+    
+    if (!content) return;
+    
+    fetch(`/api/program/${programId}/comment`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ content: content })
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Add comment to list
+        const commentsList = document.getElementById('comments-list');
+        const newComment = document.createElement('div');
+        newComment.className = 'comment-item';
+        newComment.id = `comment-${data.id}`;
+        newComment.innerHTML = `
+            <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
+                <div style="width: 35px; height: 35px; border-radius: 50%; background: linear-gradient(135deg, #FFD700 0%, #B8860B 100%); display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0;">
+                    ${data.username[0].toUpperCase()}
+                </div>
+                <div style="flex: 1;">
+                    <div style="background: rgba(255, 215, 0, 0.05); padding: 0.8rem; border-radius: 8px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.3rem;">
+                            <span style="font-weight: bold; color: #FFD700;">${data.username}</span>
+                            <span style="font-size: 0.7rem; color: #666;">${data.time_ago}</span>
+                        </div>
+                        <p style="color: #FFF; margin: 0;">${data.content}</p>
+                    </div>
+                    <button class="reply-btn" style="background: none; border: none; color: #B8860B; font-size: 0.8rem; margin-top: 0.3rem; margin-left: 0.5rem; cursor: pointer;" onclick="showReplyInput(${data.id})">
+                        Reply
+                    </button>
+                    <div id="reply-input-${data.id}" style="display: none; margin-top: 0.5rem;">
+                        <div style="display: flex; gap: 0.5rem;">
+                            <input type="text" id="reply-content-${data.id}" class="form-input" placeholder="Write a reply..." style="flex: 1;">
+                            <button class="btn btn-primary btn-small" onclick="postReply(${programId}, ${data.id})">Post</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        if (commentsList.children.length === 1 && commentsList.children[0].querySelector('p')?.textContent === 'No comments yet. Be the first to comment!') {
+            commentsList.innerHTML = '';
+        }
+        
+        commentsList.insertBefore(newComment, commentsList.firstChild);
+        input.value = '';
+        
+        // Update comment count
+        document.getElementById(`comment-count-${programId}`).textContent = `💬 ${data.comment_count}`;
+    });
+}
+
+// Post reply
+function postReply(programId, commentId) {
+    const input = document.getElementById(`reply-content-${commentId}`);
+    const content = input.value.trim();
+    
+    if (!content) return;
+    
+    fetch(`/api/program/${programId}/comment`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+            content: content,
+            parent_id: commentId 
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Add reply to UI
+        location.reload(); // Simple reload for replies
+    });
+}
+
+function showReplyInput(commentId) {
+    document.getElementById(`reply-input-${commentId}`).style.display = 'block';
+}
+</script>
+
+<style>
+.comments-list::-webkit-scrollbar {
+    width: 5px;
+}
+
+.comments-list::-webkit-scrollbar-track {
+    background: #1A1A1A;
+}
+
+.comments-list::-webkit-scrollbar-thumb {
+    background: #FFD700;
+    border-radius: 5px;
+}
+
+.reply-btn:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+    .program-container {
+        grid-template-columns: 1fr !important;
+    }
+    
+    .comments-sidebar {
+        position: static !important;
+    }
+}
+</style>
+{% endblock %}

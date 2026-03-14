@@ -1,0 +1,484 @@
+{% extends "base.html" %}
+
+{% block title %}{{ news.title }} - AbbayTV{% endblock %}
+
+{% block content %}
+<div class="container">
+    <a href="{{ url_for('news') }}" class="btn btn-secondary" style="margin-bottom: 1rem;">← Back to News</a>
+    
+    <div class="news-container" style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; position: relative;">
+        <!-- Main Content -->
+        <div class="news-main">
+            <article style="background: linear-gradient(145deg, #1A1A1A 0%, #0D0D0D 100%); padding: 2rem; border-radius: 8px; border: 1px solid rgba(255, 215, 0, 0.2);">
+                <h1 style="color: #FFD700; margin-bottom: 0.5rem;">{{ news.title }}</h1>
+                
+                <!-- Post Meta -->
+                <div class="post-meta" style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(255, 215, 0, 0.2);">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #FFD700 0%, #B8860B 100%); display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+                            {{ news.author.username[0]|upper }}
+                        </div>
+                        <div>
+                            <div style="font-weight: bold; color: #FFD700;">{{ news.author.username }}</div>
+                            <div style="font-size: 0.8rem; color: #666;">{{ time_ago(news.created_at) }} ago</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Interaction Stats -->
+                    <div style="display: flex; gap: 1rem; margin-left: auto;">
+                        <span style="color: #B8860B;">👁️ {{ news.views }}</span>
+                        <span style="color: #FFD700;" id="like-count-{{ news.id }}">❤️ {{ news.like_count }}</span>
+                        <span style="color: #FFD700; cursor: pointer;" id="comment-icon-{{ news.id }}" class="comment-toggle">💬 {{ news.comment_count }}</span>
+                    </div>
+                </div>
+                
+                <!-- YouTube Video -->
+                <div class="video-container" style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; margin: 1.5rem 0; border-radius: 8px; border: 2px solid rgba(255, 215, 0, 0.2);">
+                    <iframe src="{{ get_youtube_embed(news.youtube_url) }}" 
+                            style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"
+                            frameborder="0" 
+                            allowfullscreen>
+                    </iframe>
+                </div>
+                
+                <!-- Tags -->
+                {% if news.tags %}
+                <div style="margin: 1rem 0;">
+                    {% for tag in news.tags.split(',') %}
+                    <span class="tag" style="display: inline-block; margin-right: 0.5rem;">#{{ tag.strip() }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <!-- Description -->
+                <div style="line-height: 1.8; color: #CCCCCC;">
+                    <p>{{ news.description }}</p>
+                </div>
+                
+                <!-- Action Buttons (Instagram Style) -->
+                <div style="display: flex; gap: 1rem; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid rgba(255, 215, 0, 0.2);">
+                    {% if current_user.is_authenticated %}
+                    <button class="like-btn btn {% if news.is_liked_by(current_user) %}btn-primary{% else %}btn-secondary{% endif %}" 
+                            data-type="news" 
+                            data-id="{{ news.id }}"
+                            style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span>❤️</span>
+                        <span class="like-text">{% if news.is_liked_by(current_user) %}Liked{% else %}Like{% endif %}</span>
+                        <span class="like-count">({{ news.like_count }})</span>
+                    </button>
+                    {% else %}
+                    <a href="{{ url_for('login') }}" class="btn btn-secondary" style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span>❤️</span>
+                        <span>Like ({{ news.like_count }})</span>
+                    </a>
+                    {% endif %}
+                    
+                    <button class="btn btn-secondary comment-toggle-btn" data-id="{{ news.id }}" style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span>💬</span>
+                        <span>Comment</span>
+                    </button>
+                </div>
+            </article>
+        </div>
+        
+        <!-- Comments Sidebar - Hidden by Default (Instagram Style) -->
+        <div class="comments-sidebar" id="comments-sidebar-{{ news.id }}" style="display: none; position: fixed; top: 0; right: 0; width: 400px; height: 100vh; background: linear-gradient(145deg, #0A0A0A 0%, #000000 100%); border-left: 2px solid rgba(255, 215, 0, 0.3); z-index: 1000; overflow-y: auto; box-shadow: -5px 0 30px rgba(0,0,0,0.5);">
+            <div style="padding: 1.5rem;">
+                <!-- Header with Close Button -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(255, 215, 0, 0.2);">
+                    <h3 style="color: #FFD700; display: flex; align-items: center; gap: 0.5rem;">
+                        <span>💬 Comments</span>
+                        <span style="background: rgba(255, 215, 0, 0.1); padding: 0.2rem 0.8rem; border-radius: 20px; font-size: 0.9rem;">{{ news.comment_count }}</span>
+                    </h3>
+                    <button class="close-comments" style="background: none; border: none; color: #FFD700; font-size: 1.5rem; cursor: pointer;">✕</button>
+                </div>
+                
+                <!-- Comment Input - Instagram Style -->
+                {% if current_user.is_authenticated %}
+                <div class="comment-input-section" style="margin-bottom: 2rem;">
+                    <div style="display: flex; gap: 1rem; align-items: flex-start;">
+                        <div style="width: 35px; height: 35px; border-radius: 50%; background: linear-gradient(135deg, #FFD700 0%, #B8860B 100%); display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0;">
+                            {{ current_user.username[0]|upper }}
+                        </div>
+                        <div style="flex: 1; position: relative;">
+                            <textarea id="comment-input-{{ news.id }}" class="comment-textarea" placeholder="Add a comment..." rows="1" style="width: 100%; background: transparent; border: none; border-bottom: 1px solid rgba(255, 215, 0, 0.3); color: #FFF; padding: 0.5rem 0; resize: none; outline: none; font-size: 0.95rem;"></textarea>
+                            <button class="post-comment-btn" onclick="postComment({{ news.id }})" style="position: absolute; right: 0; bottom: 0.5rem; background: none; border: none; color: #FFD700; font-weight: bold; cursor: pointer; opacity: 0.5; transition: opacity 0.3s;">Post</button>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div style="text-align: center; padding: 2rem; background: rgba(0,0,0,0.3); border-radius: 8px; margin-bottom: 2rem;">
+                    <p style="color: #666; margin-bottom: 1rem;">Login to join the conversation</p>
+                    <a href="{{ url_for('login') }}" class="btn btn-primary">Login</a>
+                </div>
+                {% endif %}
+                
+                <!-- Comments List -->
+                <div class="comments-list" id="comments-list-{{ news.id }}" style="max-height: calc(100vh - 250px); overflow-y: auto;">
+                    {% for comment in comments %}
+                    <div class="comment-item" id="comment-{{ comment.id }}" style="margin-bottom: 1.5rem; animation: fadeIn 0.3s;">
+                        <!-- Main Comment -->
+                        <div style="display: flex; gap: 1rem;">
+                            <div style="width: 35px; height: 35px; border-radius: 50%; background: linear-gradient(135deg, #FFD700 0%, #B8860B 100%); display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0;">
+                                {{ comment.author.username[0]|upper }}
+                            </div>
+                            <div style="flex: 1;">
+                                <div style="background: rgba(255, 215, 0, 0.05); padding: 0.8rem; border-radius: 8px;">
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.3rem;">
+                                        <span style="font-weight: bold; color: #FFD700;">{{ comment.author.username }}</span>
+                                        <span style="font-size: 0.7rem; color: #666;">{{ comment.time_ago }}</span>
+                                    </div>
+                                    <p style="color: #FFF; margin: 0; word-wrap: break-word;">{{ comment.content }}</p>
+                                </div>
+                                
+                                <!-- Reply Button -->
+                                <button class="reply-btn" style="background: none; border: none; color: #B8860B; font-size: 0.8rem; margin-top: 0.3rem; margin-left: 0.5rem; cursor: pointer;" onclick="showReplyInput({{ comment.id }})">
+                                    Reply
+                                </button>
+                                
+                                <!-- Reply Input (Hidden) -->
+                                <div id="reply-input-{{ comment.id }}" style="display: none; margin-top: 0.5rem;">
+                                    <div style="display: flex; gap: 0.5rem;">
+                                        <input type="text" id="reply-content-{{ comment.id }}" class="form-input" placeholder="Write a reply..." style="flex: 1; background: #1A1A1A; border: 1px solid rgba(255, 215, 0, 0.3);">
+                                        <button class="btn btn-primary btn-small" onclick="postReply({{ news.id }}, {{ comment.id }})">Post</button>
+                                    </div>
+                                </div>
+                                
+                                <!-- Replies -->
+                                {% if comment.replies.count() > 0 %}
+                                <div style="margin-left: 2rem; margin-top: 0.8rem;">
+                                    {% for reply in comment.replies %}
+                                    <div style="display: flex; gap: 1rem; margin-bottom: 0.8rem;">
+                                        <div style="width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, #FFD700 0%, #B8860B 100%); display: flex; align-items: center; justify-content: center; font-size: 0.8rem; flex-shrink: 0;">
+                                            {{ reply.author.username[0]|upper }}
+                                        </div>
+                                        <div style="flex: 1;">
+                                            <div style="background: rgba(255, 215, 0, 0.02); padding: 0.5rem; border-radius: 6px;">
+                                                <div style="display: flex; justify-content: space-between;">
+                                                    <span style="font-weight: bold; color: #FFD700; font-size: 0.9rem;">{{ reply.author.username }}</span>
+                                                    <span style="font-size: 0.7rem; color: #666;">{{ reply.time_ago }}</span>
+                                                </div>
+                                                <p style="color: #CCC; font-size: 0.9rem; margin: 0.2rem 0 0 0;">{{ reply.content }}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div style="text-align: center; padding: 3rem; color: #666;">
+                        <p>No comments yet. Be the first to comment!</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Overlay when comments are open -->
+    <div class="comments-overlay" id="comments-overlay-{{ news.id }}" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999; backdrop-filter: blur(3px);"></div>
+    
+    <!-- Related News -->
+    {% if related_news %}
+    <div style="margin-top: 3rem;">
+        <h3 style="color: #FFD700; margin-bottom: 1.5rem;">More News</h3>
+        <div class="thumbnail-grid">
+            {% for item in related_news %}
+            <div class="thumbnail-card">
+                <a href="{{ url_for('news_detail', id=item.id) }}">
+                    <div class="thumbnail-image">
+                        <img src="{{ get_youtube_thumbnail(item.youtube_url) }}" alt="{{ item.title }}">
+                        <div class="thumbnail-overlay">
+                            <span class="play-button">▶</span>
+                        </div>
+                    </div>
+                    <div class="thumbnail-content">
+                        <h4 class="thumbnail-title">{{ item.title[:50] }}...</h4>
+                        <div class="thumbnail-meta">
+                            <span>{{ time_ago(item.created_at) }} ago</span>
+                            <span>❤️ {{ item.like_count }}</span>
+                            <span>💬 {{ item.comment_count }}</span>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Instagram-Style CSS -->
+<style>
+/* Comments Sidebar Animation */
+.comments-sidebar {
+    transform: translateX(100%);
+    transition: transform 0.3s ease-in-out;
+}
+
+.comments-sidebar.active {
+    transform: translateX(0);
+    display: block !important;
+}
+
+/* Comment Textarea Styling */
+.comment-textarea {
+    transition: border-color 0.3s;
+}
+
+.comment-textarea:focus {
+    border-bottom-color: #FFD700 !important;
+}
+
+.comment-textarea:focus + .post-comment-btn {
+    opacity: 1 !important;
+}
+
+/* Comment Item Animation */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.comment-item {
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* Custom Scrollbar for Comments */
+.comments-list::-webkit-scrollbar {
+    width: 4px;
+}
+
+.comments-list::-webkit-scrollbar-track {
+    background: #1A1A1A;
+}
+
+.comments-list::-webkit-scrollbar-thumb {
+    background: #FFD700;
+    border-radius: 2px;
+}
+
+.comments-list::-webkit-scrollbar-thumb:hover {
+    background: #B8860B;
+}
+
+/* Reply Button Hover */
+.reply-btn:hover {
+    text-decoration: underline;
+    color: #FFD700 !important;
+}
+
+/* Comment Toggle Button */
+.comment-toggle {
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.comment-toggle:hover {
+    transform: scale(1.1);
+    color: #FFD700 !important;
+}
+
+/* Post Comment Button */
+.post-comment-btn:hover {
+    opacity: 1 !important;
+}
+
+/* Close Button */
+.close-comments {
+    transition: transform 0.2s;
+}
+
+.close-comments:hover {
+    transform: scale(1.2);
+    color: #FFD700 !important;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .comments-sidebar {
+        width: 100% !important;
+    }
+}
+</style>
+
+<script>
+// Toggle Comments Sidebar
+document.addEventListener('DOMContentLoaded', function() {
+    const newsId = {{ news.id }};
+    const commentIcon = document.getElementById(`comment-icon-${newsId}`);
+    const toggleBtn = document.querySelector('.comment-toggle-btn');
+    const sidebar = document.getElementById(`comments-sidebar-${newsId}`);
+    const overlay = document.getElementById(`comments-overlay-${newsId}`);
+    const closeBtn = document.querySelector('.close-comments');
+    
+    function openComments() {
+        sidebar.classList.add('active');
+        overlay.style.display = 'block';
+        document.body.style.overflow = 'hidden'; // Prevent scrolling
+    }
+    
+    function closeComments() {
+        sidebar.classList.remove('active');
+        overlay.style.display = 'none';
+        document.body.style.overflow = ''; // Restore scrolling
+    }
+    
+    if (commentIcon) {
+        commentIcon.addEventListener('click', openComments);
+    }
+    
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', openComments);
+    }
+    
+    if (closeBtn) {
+        closeBtn.addEventListener('click', closeComments);
+    }
+    
+    if (overlay) {
+        overlay.addEventListener('click', closeComments);
+    }
+    
+    // Auto-expand textarea
+    const textarea = document.getElementById(`comment-input-${newsId}`);
+    if (textarea) {
+        textarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+        });
+    }
+});
+
+// Like functionality
+document.querySelectorAll('.like-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const type = this.dataset.type;
+        const id = this.dataset.id;
+        
+        fetch(`/api/${type}/${id}/like`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.liked) {
+                this.classList.remove('btn-secondary');
+                this.classList.add('btn-primary');
+                this.querySelector('.like-text').textContent = 'Liked';
+            } else {
+                this.classList.remove('btn-primary');
+                this.classList.add('btn-secondary');
+                this.querySelector('.like-text').textContent = 'Like';
+            }
+            this.querySelector('.like-count').textContent = `(${data.count})`;
+            document.getElementById(`like-count-${id}`).textContent = `❤️ ${data.count}`;
+        });
+    });
+});
+
+// Post comment
+function postComment(newsId) {
+    const input = document.getElementById(`comment-input-${newsId}`);
+    const content = input.value.trim();
+    
+    if (!content) return;
+    
+    fetch(`/api/news/${newsId}/comment`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ content: content })
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Add comment to list
+        const commentsList = document.getElementById(`comments-list-${newsId}`);
+        const newComment = document.createElement('div');
+        newComment.className = 'comment-item';
+        newComment.id = `comment-${data.id}`;
+        newComment.innerHTML = `
+            <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
+                <div style="width: 35px; height: 35px; border-radius: 50%; background: linear-gradient(135deg, #FFD700 0%, #B8860B 100%); display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0;">
+                    ${data.username[0].toUpperCase()}
+                </div>
+                <div style="flex: 1;">
+                    <div style="background: rgba(255, 215, 0, 0.05); padding: 0.8rem; border-radius: 8px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.3rem;">
+                            <span style="font-weight: bold; color: #FFD700;">${data.username}</span>
+                            <span style="font-size: 0.7rem; color: #666;">${data.time_ago}</span>
+                        </div>
+                        <p style="color: #FFF; margin: 0;">${data.content}</p>
+                    </div>
+                    <button class="reply-btn" style="background: none; border: none; color: #B8860B; font-size: 0.8rem; margin-top: 0.3rem; margin-left: 0.5rem; cursor: pointer;" onclick="showReplyInput(${data.id})">
+                        Reply
+                    </button>
+                    <div id="reply-input-${data.id}" style="display: none; margin-top: 0.5rem;">
+                        <div style="display: flex; gap: 0.5rem;">
+                            <input type="text" id="reply-content-${data.id}" class="form-input" placeholder="Write a reply..." style="flex: 1; background: #1A1A1A; border: 1px solid rgba(255, 215, 0, 0.3);">
+                            <button class="btn btn-primary btn-small" onclick="postReply(${newsId}, ${data.id})">Post</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Remove "no comments" message if it exists
+        const noComments = commentsList.querySelector('div[style*="text-align: center; padding: 3rem;"]');
+        if (noComments) {
+            noComments.remove();
+        }
+        
+        commentsList.insertBefore(newComment, commentsList.firstChild);
+        input.value = '';
+        input.style.height = 'auto';
+        
+        // Update comment count
+        const commentIcon = document.getElementById(`comment-icon-${newsId}`);
+        if (commentIcon) {
+            const count = parseInt(commentIcon.textContent.match(/\d+/)[0]) + 1;
+            commentIcon.innerHTML = `💬 ${count}`;
+        }
+    });
+}
+
+// Post reply
+function postReply(newsId, commentId) {
+    const input = document.getElementById(`reply-content-${commentId}`);
+    const content = input.value.trim();
+    
+    if (!content) return;
+    
+    fetch(`/api/news/${newsId}/comment`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+            content: content,
+            parent_id: commentId 
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        location.reload(); // Simple reload for replies
+    });
+}
+
+function showReplyInput(commentId) {
+    document.getElementById(`reply-input-${commentId}`).style.display = 'block';
+}
+</script>
+{% endblock %}

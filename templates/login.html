@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}Login - AbbayTV{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <!-- Floating orbs for background effect -->
+    <div class="floating-orb"></div>
+    <div class="floating-orb"></div>
+    
+    <div class="auth-card">
+        <div class="auth-header">
+            <h1>Welcome Back</h1>
+            <p>Sign in to continue to AbbayTV</p>
+        </div>
+        
+        <form method="POST" class="auth-form">
+            <div class="form-group">
+                <label class="form-label">Email Address</label>
+                <input type="email" name="email" class="form-input" placeholder="your@email.com" required>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Password</label>
+                <input type="password" name="password" class="form-input" placeholder="••••••••" required>
+            </div>
+            
+            <div class="auth-links">
+                <label class="auth-checkbox">
+                    <input type="checkbox" id="remember" name="remember" class="form-checkbox">
+                    <span>Remember me</span>
+                </label>
+                <a href="#" onclick="alert('Password reset - contact admin')">Forgot password?</a>
+            </div>
+            
+            <button type="submit" class="auth-button">Sign In</button>
+        </form>
+        
+        <!-- Demo credentials - Only visible to admin (hidden by default) -->
+        {% if current_user.is_authenticated and current_user.is_admin %}
+        <div class="demo-credentials" style="margin-top: 1.5rem; padding: 1rem; background: rgba(0, 0, 0, 0.4); border-radius: 8px; border: 1px dashed rgba(255, 215, 0, 0.3);">
+            <p style="color: #B8860B; font-size: 0.9rem; margin: 0.2rem 0;"><strong>Admin Demo:</strong> admin@abbaytv.com / admin123</p>
+            <p style="color: #B8860B; font-size: 0.9rem; margin: 0.2rem 0;"><strong>User Demo:</strong> john@example.com / password123</p>
+        </div>
+        {% endif %}
+        
+        <div class="auth-footer">
+            Don't have an account? <a href="{{ url_for('signup') }}">Sign up here</a>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden credentials for quick login (press Ctrl+Shift+D to show) -->
+<div id="hidden-credentials" style="display: none; position: fixed; bottom: 20px; right: 20px; background: #000; border: 1px solid #FFD700; padding: 1rem; border-radius: 8px; z-index: 9999;">
+    <p style="color: #FFD700; margin-bottom: 0.5rem;">🔐 Demo Credentials</p>
+    <p style="color: #FFF; font-size: 0.9rem;">Admin: admin@abbaytv.com / admin123</p>
+    <p style="color: #FFF; font-size: 0.9rem;">User: john@example.com / password123</p>
+    <button onclick="this.parentElement.style.display='none'" style="position: absolute; top: 5px; right: 5px; background: none; border: none; color: #FFD700; cursor: pointer;">✕</button>
+</div>
+
+<script>
+// Secret key combination to show demo credentials (Ctrl+Shift+D)
+document.addEventListener('keydown', function(e) {
+    if (e.ctrlKey && e.shiftKey && e.key === 'D') {
+        document.getElementById('hidden-credentials').style.display = 'block';
+    }
+});
+
+// Auto-fill for demo (only for testing)
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('demo') === 'admin') {
+        document.querySelector('input[name="email"]').value = 'admin@abbaytv.com';
+        document.querySelector('input[name="password"]').value = 'admin123';
+    } else if (urlParams.get('demo') === 'user') {
+        document.querySelector('input[name="email"]').value = 'john@example.com';
+        document.querySelector('input[name="password"]').value = 'password123';
+    }
+});
+</script>
+{% endblock %}

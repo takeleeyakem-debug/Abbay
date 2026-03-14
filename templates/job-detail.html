@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}{{ job.title }} - AbbayTV{% endblock %}
+
+{% block content %}
+<div class="container">
+    <a href="{{ url_for('jobs') }}" class="btn btn-secondary" style="margin-bottom: 1rem;">← Back to Jobs</a>
+    
+    <div class="job-header" style="background: linear-gradient(145deg, #1A1A1A 0%, #0D0D0D 100%); padding: 2rem; border-radius: 8px; margin-bottom: 1.5rem; border: 1px solid rgba(255, 215, 0, 0.2);">
+        <h1 style="color: #FFD700; font-size: 2rem; margin-bottom: 0.5rem;">{{ job.title }}</h1>
+        
+        <div style="display: flex; gap: 2rem; flex-wrap: wrap; margin: 1rem 0;">
+            <span style="color: #B8860B;">🏢 {{ job.company }}</span>
+            <span style="color: #B8860B;">📍 {{ job.location }}</span>
+            <span class="job-type-badge">{{ job.job_type }}</span>
+            <span class="job-type-badge">💰 {{ job.salary }}</span>
+        </div>
+        
+        <div style="color: #666; font-size: 0.9rem;">
+            Posted on {{ job.created_at.strftime('%B %d, %Y') }}
+        </div>
+    </div>
+    
+    <div class="job-description" style="background: linear-gradient(145deg, #1A1A1A 0%, #0D0D0D 100%); padding: 2rem; border-radius: 8px; border: 1px solid rgba(255, 215, 0, 0.2);">
+        <h3 style="color: #FFD700; margin-bottom: 1rem;">Job Description</h3>
+        <p style="color: #CCCCCC; line-height: 1.8; white-space: pre-line;">{{ job.description }}</p>
+        
+        {% if job.category %}
+        <div style="margin-top: 1.5rem;">
+            <span class="category-badge">Category: {{ job.category }}</span>
+        </div>
+        {% endif %}
+        
+        <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid rgba(255, 215, 0, 0.2);">
+            <button class="btn btn-success" onclick="alert('This is a demo application. In a real application, this would submit an application.')">
+                Apply for this Position
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
