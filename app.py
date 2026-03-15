@@ -6,6 +6,17 @@ from datetime import datetime
 import os
 import os
 
+# Database configuration
+database_url = os.environ.get('DATABASE_URL', 'sqlite:///instance/abbay.db')
+
+# Fix for Render PostgreSQL URL (starts with postgres://)
+if database_url and database_url.startswith('postgres://'):
+    database_url = database_url.replace('postgres://', 'postgresql://', 1)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+import os
+
 # Ensure instance folder exists
 os.makedirs(os.path.join(os.path.dirname(__file__), 'instance'), exist_ok=True)
 import re
@@ -13,7 +24,7 @@ import json
 
 # Initialize Flask app
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'abbaytv-secret-key-2024'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-this')
 
 # Fix database path - absolute path to instance folder
 basedir = os.path.abspath(os.path.dirname(__file__))
