@@ -4,6 +4,10 @@ from flask_login import LoginManager, UserMixin, login_user, login_required, log
 from flask_bcrypt import Bcrypt
 from datetime import datetime
 import os
+import os
+
+# Ensure instance folder exists
+os.makedirs(os.path.join(os.path.dirname(__file__), 'instance'), exist_ok=True)
 import re
 import json
 
